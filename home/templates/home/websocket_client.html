@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% block content %}
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>Hearo</title>
+</head>
+
+<body>
+
+    <video id="camera-feed" autoplay></video>
+
+    <!-- WebSocket 클라이언트 코드 -->
+    <script>
+        // 웹소켓 연결 설정
+        const socket = new WebSocket('ws://127.0.0.1:8000/camera/camera');
+
+        // 버튼 클릭 시 웹소켓으로 데이터 전송 (예: 클릭 이벤트 리스너 추가)
+        document.getElementById('camera-button').addEventListener('click', () => {
+            // 웹소켓으로 데이터 전송 (예: JSON 형식의 데이터)
+            const data = { action: 'start_camera' };
+            socket.send(JSON.stringify(data));
+        });
+
+        // 웹소켓 이벤트 리스너
+        socket.addEventListener('message', (event) => {
+            const receivedData = JSON.parse(event.data);
+            if (receivedData.action === 'update_frame') {
+                const videoElement = document.getElementById('camera-feed');
+        
+                // 서버로부터 받은 데이터 중 action이 'update_frame'인 경우
+                // 비디오 엘리먼트의 src 속성을 업데이트하여 영상을 표시합니다.
+                videoElement.src = receivedData.frame_data;
+            }
+        });
+
+    </script>
+</body>
+</html>
+{% endblock %}

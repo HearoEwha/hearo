@@ -8,3 +8,6 @@ def select(request):
 
 def cam(request):
     return render(request, 'home/camera.html')
+
+def camera_view(request):
+    return render(request, 'home/websocket_client.html')

@@ -10,6 +10,10 @@ from camera.models import MyModel
 import threading
 from PIL import ImageFont, ImageDraw, Image
 import torch.nn.functional as F
+from django.http import JsonResponse
+from collections import deque
+from django.core.cache import cache
+from django.http import HttpResponse
 
 # 모델 경로와 디바이스 설정
 model = MyModel()
@@ -22,6 +26,7 @@ class VideoCamera(object):
     def __init__(self):
         self.video = cv2.VideoCapture(0)
         (self.grabbed, self.frame) = self.video.read()
+        self.frame_buffer = deque(maxlen=16)  # 최근 16프레임을 저장하는 버퍼
         threading.Thread(target=self.update, args=()).start()
 
     def __del__(self):
@@ -31,12 +36,41 @@ class VideoCamera(object):
         image = cv2.cvtColor(self.frame, cv2.COLOR_BGR2RGB)  # OpenCV의 BGR 형식을 RGB로 변환
         _, jpeg = cv2.imencode('.jpg', image)
         return jpeg.tobytes()
+    
+    def read(self):
+        grabbed, frame = self.video.read()
+        if grabbed:
+        # 프레임이 제대로 읽어진 경우에만 BGR 형식으로 변환하여 반환
+            frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+        return grabbed, frame
 
     def update(self):
+        #while True:
+        #    (self.grabbed, self.frame) = self.video.read()  # 프레임을 여기서 업데이트합니다
+        #    if not self.grabbed:
+        #        break
+        frame_buffer = deque(maxlen=16)  # 최근 16프레임을 저장하는 버퍼
         while True:
-            (self.grabbed, self.frame) = self.video.read()  # 프레임을 여기서 업데이트합니다
+            (self.grabbed, self.frame) = self.video.read()
             if not self.grabbed:
                 break
+
+            frame_buffer.append(self.frame)  # 현재 프레임을 버퍼에 추가
+
+            if len(frame_buffer) == 16:  # 16프레임이 채워졌을 때 분류 수행
+                frames_to_process = list(frame_buffer)  # 버퍼의 프레임들을 리스트로 변환
+                predicted_class_name, predicted_probability = process_frame(frames_to_process, model)
+                print(predicted_class_name)
+                print(f"Class Probability: {predicted_probability:.2f}")
+    
+    def update(self):
+        while True:
+            self.grabbed, self.frame = self.video.read()
+            if not self.grabbed:
+                break
+
+            self.frame_buffer.append(self.frame)  # 현재 프레임을 버퍼에 추가
+
 
 #-*- coding: utf-8 -*- 
 
@@ -51,9 +85,29 @@ def process_frame(frame, model):
     ])
     frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
     frame_tensor = transform(frame_rgb)
-    # frame_tensor = transform(frame)
-    if frame_tensor.shape[0] == 1:
-        frame_tensor = frame_tensor.expand(3, -1, -1, -1)
+    
+    num_frames = frame_tensor.shape[0]
+    stride = 8  # overlap할 구간 크기
+    
+    # 리스트를 사용하여 각 구간마다 전처리된 프레임을 저장
+    frame_tensors = []
+    for i in range(0, num_frames, stride):
+        end_idx = min(i + 16, num_frames)  # 현재 구간의 마지막 인덱스
+        current_frames = frame_tensor[i:end_idx]  # 현재 구간의 프레임들
+        
+        # 16프레임이 되지 않는 경우에는 빈 프레임을 추가하여 16프레임으로 만듦
+        if current_frames.shape[0] < 16:
+            padding = torch.zeros(16 - current_frames.shape[0], *current_frames.shape[1:])
+            current_frames = torch.cat((current_frames, padding))
+        
+        frame_tensors.append(current_frames)
+    
+    # 리스트로 저장된 전처리된 프레임들을 하나의 텐서로 변환
+    frame_tensors = torch.stack(frame_tensors)
+    
+    # 텐서를 모델 입력 형식에 맞게 변환
+    if len(frame_tensors.shape) == 4:  # 4D 텐서인 경우 (batch_size, num_frames, ...)
+        frame_tensors = frame_tensors.unsqueeze(0)
 
     # Add a batch dimension
     frame_tensor = frame_tensor.unsqueeze(0)
@@ -89,19 +143,16 @@ def process_frame(frame, model):
         12: "어깨",
         13: "팔꿈치",
         14: "허리"
-        # 추가적인 클래스와 번호를 매핑하면 됩니다.
     }
-
-
+    
     # 예측 결과 가져오기
     _, predicted_idx = torch.max(output.data, 1)
     predicted_class_num = predicted_idx.item()
-    #print(predicted_class)
     predicted_class_name = class_mapping.get(predicted_class_num, "알 수 없음")
     predicted_probability = probabilities[0][predicted_idx].item()
     
-    print(predicted_class_name)
-    print(f"Class Probability: {predicted_probability:.2f}")
+    #print(predicted_class_name)
+    #print(f"Class Probability: {predicted_probability:.2f}")
     
     return predicted_class_name, predicted_probability
 
@@ -141,18 +192,34 @@ def get_video_frame(cam, model):
         yield (b'--frame\r\n'
                b'Content-Type: image/jpeg\r\n\r\n' + frame_bytes + b'\r\n\r\n')
 
-# 프레임 및 예측 결과를 생성하는 제너레이터
-# def gen(camera, model):
-#     for frame in get_video_frame(camera, model):
-#         # 프레임 단위로 이미지 반환
-#         yield (b'--frame\r\n'
-#                b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n\r\n')
+def initialize_model():
+    # 모델을 초기화하고 반환
+    model = MyModel()
+    return model
 
-# 웹캠 영상 스트리밍
+# 모델을 캐시에서 가져오거나 초기화
+def get_model():
+    model = cache.get('your_model_key')
+    if model is None:
+        model = initialize_model()
+        cache.set('your_model_key', model, timeout=None)  # 모델을 캐시에 저장 (timeout=None은 캐시를 영구적으로 유지)
+    return model
+
+#웹캠 영상 스트리밍
 def camera(request):
     try:
         cam = VideoCamera()  # 웹캠 호출
+        model = get_model()
         return StreamingHttpResponse(get_video_frame(cam, model), content_type="multipart/x-mixed-replace;boundary=frame")
     except Exception as e:
         print("에러입니다:", str(e))
         pass
+    
+
+
+
+
+
+
+
+

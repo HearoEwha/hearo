@@ -17,6 +17,11 @@ from django.contrib import admin
 from django.urls import path
 from django.urls import path, include
 from .views import *
+from camera import consumers 
+
+websocket_urlpatterns = [
+    path('ws/camera/camera/', consumers.YourConsumer.as_asgi()),
+]
 
 urlpatterns = [
     path('admin/', admin.site.urls), #관리자페이지
@@ -25,4 +30,6 @@ urlpatterns = [
     path('users/', include('users.urls')), #로그인, 회원가입
     path('mic/', include('mic.urls'), name='mic'),
     path('camera/', include('camera.urls'), name='cam'),
+    path('', include(websocket_urlpatterns)),  # WebSocket 경로 추가
 ]
+
