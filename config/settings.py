@@ -15,9 +15,9 @@ import os
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
+'''
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = "C:/Users/kdh30/Downloads/balmy-smile-388215-f2681e9683a4.json"
-
+'''
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/4.0/howto/deployment/checklist/
 
@@ -42,7 +42,7 @@ INSTALLED_APPS = [
     'django.contrib.staticfiles',
     'home',
     'users',
-    'mic',
+    #'mic',
     'camera',
 
 ]

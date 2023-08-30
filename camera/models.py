@@ -6,7 +6,7 @@ import torchvision.models.video as vmodels
 class MyModel():
     def __init__(self):
         # Load the saved model
-        model_path = "/Users/song-yeojin/hearoWeb/r2plus2d.pth"
+        model_path = "/Users/dohakim/HearoWeb/r2plus2d.pth"
         #self.model = torch.load(model_path, map_location=torch.device('cpu'))
 
         self.model = vmodels.r2plus1d_18(num_classes=15, pretrained=False)

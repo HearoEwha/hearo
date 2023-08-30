@@ -23,6 +23,6 @@ urlpatterns = [
     path('home/', include('home.urls')), #진료시작전페이지
     path('', main, name="main"), #완전 메인화면(첫화면)
     path('users/', include('users.urls')), #로그인, 회원가입
-    path('mic/', include('mic.urls'), name='mic'),
+    #path('mic/', include('mic.urls'), name='mic'),
     path('camera/', include('camera.urls'), name='cam'),
 ]

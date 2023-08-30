@@ -1,3 +1,4 @@
+'''
 from django.shortcuts import render, redirect
 from .realtimeapicall import RGspeech
 import time
@@ -30,3 +31,4 @@ def apic(request): #api 호출 함수
         # \\break
     # time.sleep(0.01)
     return render(request, 'mic/result.html', {'stt' : stt})
+'''

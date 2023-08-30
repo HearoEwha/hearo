@@ -12,8 +12,10 @@
       <change beforePath="$PROJECT_DIR$/camera/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/camera/views.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/config/urls.py" beforeDir="false" afterPath="$PROJECT_DIR$/config/urls.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/home/templates/home/select.html" beforeDir="false" afterPath="$PROJECT_DIR$/home/templates/home/select.html" afterDir="false" />
+      <!--
       <change beforePath="$PROJECT_DIR$/mic/templates/mic/mic.html" beforeDir="false" afterPath="$PROJECT_DIR$/mic/templates/mic/mic.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/mic/views.py" beforeDir="false" afterPath="$PROJECT_DIR$/mic/views.py" afterDir="false" />
+      -->
       <change beforePath="$PROJECT_DIR$/templates/main.html" beforeDir="false" afterPath="$PROJECT_DIR$/templates/main.html" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/users/templates/users/signup.html" beforeDir="false" afterPath="$PROJECT_DIR$/users/templates/users/signup.html" afterDir="false" />
     </list>
@@ -53,7 +55,9 @@
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
       <recent name="C:\projects\mysite\static" />
+      <!--
       <recent name="C:\projects\mysite\mic\templates\mic" />
+      -->
       <recent name="C:\projects\mysite" />
       <recent name="C:\projects\mysite\config" />
     </key>

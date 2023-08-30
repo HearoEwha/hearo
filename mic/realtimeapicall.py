@@ -1,3 +1,4 @@
+'''
 from __future__ import division
 
 import re
@@ -170,3 +171,4 @@ class RGspeech(Thread):
                     num_chars_printed = 0
         except:
             return
+'''
